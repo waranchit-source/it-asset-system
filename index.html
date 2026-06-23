@@ -84,6 +84,13 @@
         .spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* Modal Styles */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 5000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .modal-card { background: var(--card-bg); padding: 30px; border-radius: 12px; width: 100%; max-width: 900px; max-height: 85vh; overflow-y: auto; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .close-btn { position: absolute; top: 20px; right: 25px; font-size: 24px; cursor: pointer; color: var(--text-gray); transition: color 0.2s; }
+        .close-btn:hover { color: var(--text-dark); }
+        .log-table th, .log-table td { padding: 12px 10px; font-size: 12px; }
+
         @media (max-width: 768px) {
             .sidebar { position: absolute; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
             .filters input { max-width: 100%; }
@@ -93,7 +100,6 @@
 <body>
 
     <div id="authOverlay" style="display: none;">
-        
         <div class="auth-card" id="loginCard">
             <h2>IT Asset Login</h2>
             <p style="color: var(--text-gray); margin-bottom: 20px; font-size: 13px;">Please log in with your email and password</p>
@@ -126,7 +132,6 @@
             </form>
             <div class="auth-links" onclick="switchAuthMode('login')">Already have an account? Login here</div>
         </div>
-
     </div>
 
     <datalist id="snList"></datalist>
@@ -137,6 +142,31 @@
     <div id="loader">
         <div class="spinner"></div>
         <div id="loaderText">Loading data...</div>
+    </div>
+
+    <!-- Modal สำหรับดูประวัติ Transaction -->
+    <div id="historyModal" class="modal-overlay">
+        <div class="modal-card">
+            <i class="fa-solid fa-xmark close-btn" onclick="closeModal()"></i>
+            <h2 id="modalTitle" style="margin-top: 0; color: var(--primary-blue);">Transaction History</h2>
+            <div class="table-container">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Action</th>
+                            <th>Executed By (Actor)</th>
+                            <th>Assignee</th>
+                            <th>Branch</th>
+                            <th>Department</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <div class="sidebar" id="sidebar">
@@ -184,7 +214,7 @@
                                     <th>Branch</th>
                                     <th>Department</th>
                                     <th>Status</th>
-                                    <th>Last Log</th>
+                                    <th>History Log</th>
                                 </tr>
                             </thead>
                             <tbody id="dashboardBody">

@@ -1,6 +1,7 @@
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztMgStCjjof9pzWyayC9F4aG3IkB3ZRbhDLk-aGmsy2Ngje44S6py7BpOu-Sm8benu3A/exec'; 
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztMgStCjjof9pzWyayC9F4aG3IkB3ZRbhDLk-aGmsy2Ngje44S6py7BpOu-Sm8benu3A/exec';
 
 let globalData = [];
+let globalLogs = [];
 let currentUser = '';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -149,6 +150,7 @@ function logout() {
     localStorage.removeItem('it_asset_user');
     sessionStorage.removeItem('it_asset_user');
     globalData = [];
+    globalLogs = [];
     document.getElementById('dashboardBody').innerHTML = '';
     checkAuth();
 }
@@ -206,6 +208,7 @@ async function fetchData() {
         const json = await response.json();
         
         globalData = json.dashboard;
+        globalLogs = json.logs || [];
         updateDatalists(globalData, json.branches, json.depts);
         applyFilters();
     } catch (error) {
@@ -237,22 +240,21 @@ function renderTable(dataToRender) {
     dataToRender.forEach(row => {
         if (row['S/N (Serial Number)']) {
             const tr = document.createElement('tr');
+            const sn = row['S/N (Serial Number)'];
             
             let status = row['Status'] || 'Available';
             let badgeClass = 'status-available';
             if (status === 'Pending') badgeClass = 'status-pending';
             if (status === 'In Use') badgeClass = 'status-inuse';
-
-            let updateInfo = row['UpdatedBy'] || '-';
             
             tr.innerHTML = `
-                <td>${row['S/N (Serial Number)']}</td>
+                <td>${sn}</td>
                 <td>${row['ชื่ออุปกรณ์หลัก'] || '-'}</td>
                 <td>${row['ชื่อผู้รับผิดชอบ'] || '-'}</td>
                 <td>${row['สาขา'] || '-'}</td>
                 <td>${row['แผนก'] || '-'}</td>
                 <td><span class="status-badge ${badgeClass}">${status}</span></td>
-                <td style="color: #8e8e8e; font-size: 12px;">${updateInfo}</td>
+                <td><button class="btn-outline" onclick="viewHistory('${sn}')"><i class="fa-solid fa-clock-rotate-left"></i> View History</button></td>
             `;
             tbody.appendChild(tr);
         }
@@ -278,6 +280,42 @@ function applyFilters() {
 function clearFilters() {
     document.getElementById('filterName').value = '';
     applyFilters();
+}
+
+function viewHistory(sn) {
+    const modal = document.getElementById('historyModal');
+    const tbody = document.getElementById('historyBody');
+    const title = document.getElementById('modalTitle');
+    
+    title.innerText = `Transaction History: ${sn}`;
+    tbody.innerHTML = '';
+
+    const assetLogs = globalLogs.filter(log => log['S/N'] == sn);
+    assetLogs.sort((a, b) => new Date(b['Timestamp']) - new Date(a['Timestamp'])); // ล่าสุดขึ้นก่อน
+
+    if(assetLogs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No history found for this asset.</td></tr>`;
+    } else {
+        assetLogs.forEach(log => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${log['Timestamp']}</td>
+                <td style="font-weight: 600; color: var(--primary-blue);">${log['Action']}</td>
+                <td>${log['Actor'] || '-'}</td>
+                <td>${log['Assignee'] || '-'}</td>
+                <td>${log['Branch'] || '-'}</td>
+                <td>${log['Department'] || '-'}</td>
+                <td style="color: var(--text-gray);">${log['Details'] || '-'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    modal.style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('historyModal').style.display = 'none';
 }
 
 document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
