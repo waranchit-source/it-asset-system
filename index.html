@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Asset Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #fafafa;
+            --card-bg: #ffffff;
+            --border-color: #dbdbdb;
+            --primary-blue: #0095f6;
+            --text-dark: #262626;
+            --text-gray: #8e8e8e;
+            --success-green: #28a745;
+            --sidebar-width: 250px;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-dark); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 3000; display: flex; justify-content: center; align-items: center; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .auth-card { background: var(--card-bg); padding: 40px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center; width: 100%; max-width: 400px; }
+        .auth-card h2 { margin-top: 0; margin-bottom: 10px; color: var(--primary-blue); font-weight: 600; }
+        .password-container { position: relative; margin-bottom: 15px; }
+        .password-container input { margin-bottom: 0; padding-right: 40px; }
+        .password-container i { position: absolute; right: 15px; top: 15px; cursor: pointer; color: var(--text-gray); }
+        .auth-links { margin-top: 20px; font-size: 14px; color: var(--primary-blue); cursor: pointer; font-weight: 600; }
+        .remember-me { display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-bottom: 20px; font-size: 14px; color: var(--text-dark); }
+        .remember-me input { width: auto; margin: 0; }
+
+        .sidebar { width: var(--sidebar-width); background: var(--card-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: transform 0.3s ease; z-index: 1000; justify-content: space-between; }
+        .sidebar.closed { transform: translateX(-100%); position: absolute; height: 100%; }
+        .sidebar-header { padding: 30px 20px; font-size: 24px; font-weight: 600; font-family: sans-serif; text-align: center; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; border-bottom: 1px solid var(--border-color); }
+        .nav-links { display: flex; flex-direction: column; padding: 20px 10px; gap: 10px; flex: 1; }
+        .nav-links a { text-decoration: none; color: var(--text-dark); padding: 12px 15px; border-radius: 8px; font-size: 15px; display: flex; align-items: center; gap: 15px; transition: background 0.2s; cursor: pointer; font-weight: 500; }
+        .nav-links a:hover { background-color: var(--bg-color); }
+        .nav-links a.active { font-weight: 600; background-color: var(--bg-color); }
+        .nav-links a i { font-size: 20px; width: 24px; text-align: center; }
+        
+        .user-info { padding: 20px; border-top: 1px solid var(--border-color); text-align: center; }
+        .user-info p { margin: 0 0 10px 0; font-size: 13px; font-weight: 600; color: var(--text-gray); }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; transition: margin-left 0.3s ease; }
+        .topbar { background: var(--card-bg); border-bottom: 1px solid var(--border-color); padding: 15px 20px; display: flex; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .menu-toggle { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-dark); margin-right: 20px; padding: 0; }
+        .topbar h2 { margin: 0; font-size: 18px; font-weight: 600; }
+
+        .content-area { padding: 30px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+        .view-section { display: none; animation: fadeIn 0.3s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; margin-bottom: 20px; }
+        .card h3 { margin-top: 0; margin-bottom: 20px; font-size: 18px; font-weight: 600; }
+        
+        input { width: 100%; padding: 12px 15px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; background-color: var(--bg-color); font-family: 'Inter', sans-serif; font-size: 14px; transition: border-color 0.2s; }
+        input:focus { outline: none; border-color: var(--text-gray); background-color: var(--card-bg); }
+        input[type="search"]::-webkit-search-cancel-button { cursor: pointer; -webkit-appearance: none; height: 16px; width: 16px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%238e8e8e"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>') no-repeat center center; background-size: cover; }
+        
+        button.btn-primary { width: 100%; padding: 12px; border: none; border-radius: 8px; background-color: var(--primary-blue); color: white; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s; font-family: 'Inter', sans-serif; }
+        button.btn-primary:hover { background-color: #0077c9; }
+        button.btn-success { width: 100%; padding: 12px; border: none; border-radius: 8px; background-color: var(--success-green); color: white; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s; font-family: 'Inter', sans-serif; }
+        button.btn-success:hover { background-color: #218838; }
+        button.btn-outline { padding: 8px 15px; border: 1px solid var(--border-color); border-radius: 6px; background: transparent; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 500; transition: background 0.2s; font-size: 13px; }
+        button.btn-outline:hover { background: var(--bg-color); }
+        button.btn-danger { background: #dc3545; color: white; border: none; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px; }
+
+        .filters { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filters input { margin-bottom: 0; max-width: 250px; }
+
+        .table-container { overflow-x: auto; border: 1px solid var(--border-color); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; background: var(--card-bg); }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 13px; white-space: nowrap; }
+        th { color: var(--text-gray); font-weight: 600; }
+        tr:last-child td { border-bottom: none; }
+        
+        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .status-available { background: #e6f4ea; color: #1e8e3e; }
+        .status-pending { background: #fef7e0; color: #f29900; }
+        .status-inuse { background: #fce8e6; color: #d93025; }
+
+        #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 4000; justify-content: center; align-items: center; font-size: 16px; font-weight: 600; flex-direction: column; gap: 15px; }
+        .spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .sidebar { position: absolute; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+            .filters input { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="authOverlay" style="display: none;">
+        
+        <div class="auth-card" id="loginCard">
+            <h2>IT Asset Login</h2>
+            <p style="color: var(--text-gray); margin-bottom: 20px; font-size: 13px;">Please log in with your email and password</p>
+            <form id="loginForm">
+                <input type="email" id="loginEmail" placeholder="Email Address" required autocomplete="username">
+                <div class="password-container">
+                    <input type="password" id="loginPassword" placeholder="Password" required autocomplete="current-password">
+                    <i class="fa-solid fa-eye" id="toggleLoginPwd" onclick="togglePassword('loginPassword', 'toggleLoginPwd')"></i>
+                </div>
+                <div class="remember-me">
+                    <input type="checkbox" id="rememberMe">
+                    <label for="rememberMe">Remember me</label>
+                </div>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+            <div class="auth-links" onclick="switchAuthMode('register')">Don't have an account? Register here</div>
+        </div>
+
+        <div class="auth-card" id="registerCard" style="display: none;">
+            <h2>Register</h2>
+            <p style="color: var(--text-gray); margin-bottom: 20px; font-size: 13px;">Your account requires admin approval</p>
+            <form id="registerForm">
+                <input type="text" id="regName" placeholder="Full Name" required autocomplete="name">
+                <input type="email" id="regEmail" placeholder="Email Address" required autocomplete="email">
+                <div class="password-container">
+                    <input type="password" id="regPassword" placeholder="Password" required autocomplete="new-password">
+                    <i class="fa-solid fa-eye" id="toggleRegPwd" onclick="togglePassword('regPassword', 'toggleRegPwd')"></i>
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top: 10px;">Register</button>
+            </form>
+            <div class="auth-links" onclick="switchAuthMode('login')">Already have an account? Login here</div>
+        </div>
+
+    </div>
+
+    <datalist id="snList"></datalist>
+    <datalist id="nameList"></datalist>
+    <datalist id="branchList"></datalist>
+    <datalist id="deptList"></datalist>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <div id="loaderText">Loading data...</div>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <div>
+            <div class="sidebar-header">IT Asset</div>
+            <div class="nav-links">
+                <a class="nav-item active" data-target="dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                <a class="nav-item" data-target="checkout"><i class="fa-solid fa-paper-plane"></i> Check-out</a>
+                <a class="nav-item" data-target="checkin"><i class="fa-solid fa-box-archive"></i> Check-in</a>
+            </div>
+        </div>
+        <div class="user-info">
+            <p id="currentUserDisplay">User: -</p>
+            <button class="btn-danger" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar">
+            <button class="menu-toggle" id="menuToggle"><i class="fa-solid fa-bars"></i></button>
+            <h2 id="topbarTitle">Dashboard</h2>
+        </div>
+
+        <div class="content-area">
+            
+            <div id="dashboard" class="view-section active">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                        <h3 style="margin: 0;">All IT Assets</h3>
+                        <button class="btn-outline" onclick="fetchData()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+                    </div>
+                    
+                    <div class="filters">
+                        <input type="search" id="filterName" placeholder="🔍 Search Name / Device / S/N..." onkeyup="applyFilters()">
+                        <button class="btn-outline" onclick="clearFilters()">Clear Filter</button>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>S/N</th>
+                                    <th>Device Name</th>
+                                    <th>Assignee</th>
+                                    <th>Branch</th>
+                                    <th>Department</th>
+                                    <th>Status</th>
+                                    <th>Last Log</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="checkout" class="view-section">
+                <div class="card" style="max-width: 500px; margin: 0 auto;">
+                    <h3><i class="fa-solid fa-paper-plane" style="color: var(--primary-blue);"></i> Check-out Asset</h3>
+                    <form id="checkoutForm">
+                        <input type="search" id="co_sn" placeholder="Asset S/N" list="snList" required autocomplete="off">
+                        <input type="search" id="co_name" placeholder="Assignee Name" list="nameList" required autocomplete="off">
+                        <input type="search" id="co_branch" placeholder="Branch" list="branchList" required autocomplete="off">
+                        <input type="search" id="co_dept" placeholder="Department" list="deptList" required autocomplete="off">
+                        <input type="email" id="co_email" placeholder="Confirmation Email" required>
+                        <button type="submit" class="btn-primary">Submit Request</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="checkin" class="view-section">
+                <div class="card" style="max-width: 500px; margin: 0 auto;">
+                    <h3><i class="fa-solid fa-box-archive" style="color: var(--success-green);"></i> Check-in Asset</h3>
+                    <form id="checkinForm">
+                        <input type="search" id="ci_sn" placeholder="Asset S/N" list="snList" required autocomplete="off">
+                        <button type="submit" class="btn-success">Confirm Check-in</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
